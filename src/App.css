@@ -1,3 +1,15 @@
+.page {
+  min-height: 100vh;
+}
+
+.page__main {
+  min-height: 100vh;
+}
+
+.page__hero {
+  position: relative;
+}
+
 .counter {
   font-size: 16px;
   padding: 5px 10px;
