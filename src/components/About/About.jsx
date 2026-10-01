@@ -14,15 +14,14 @@ function About() {
         </div>
 
         <div className="about__content">
-          <h2 className="about__title">Sobre a autora</h2>
+          <h2 className="about__title">Sobre o autor</h2>
 
           <p className="about__text">
-            Esta é uma seção sobre a autora do projeto NewsExplorer.
+            Sou desenvolvedor web formado em Análise e Desenvolvimento de Sistemas, atualmente em formação no bootcamp da TripleTen.
           </p>
 
           <p className="about__text">
-            Aqui podemos apresentar informações sobre sua experiência e
-            trajetória.
+            Tenho foco no desenvolvimento Full Stack, com experiência em React.js, JavaScript, Node.js, Express, APIs REST e MongoDB. Este projeto faz parte da minha jornada de aprendizado e prática no desenvolvimento de aplicações web modernas.
           </p>
         </div>
       </div>

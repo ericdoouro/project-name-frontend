@@ -70,16 +70,20 @@ function Header({
           aria-label="Navegação principal"
         >
           <a
-            className="header__link header__link_active"
+            className={`header__link ${
+              isHome ? 'header__link_active' : ''
+            }`}
             href="/"
             onClick={handleMenuClose}
           >
             Início
           </a>
-
-          {isLoggedIn && (
+        
+          {(isLoggedIn || !isHome) && (
             <a
-              className="header__link"
+              className={`header__link ${
+                !isHome ? 'header__link_active' : ''
+              }`}
               href="/saved-news"
               onClick={handleMenuClose}
             >
@@ -99,11 +103,9 @@ function Header({
             <button
               className="header__user-button"
               type="button"
-              onClick={handleClick}
+              onClick={handleLogoutClick}
             >
               <span>{userName}</span>
-
-              <img src="/src/images/.png" alt="" />
             </button>
           )}
         </nav>

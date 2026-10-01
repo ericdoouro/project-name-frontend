@@ -1,5 +1,7 @@
 import { useState } from 'react';
+
 import NewsCard from '../NewsCard/NewsCard';
+
 import './NewsCardList.css';
 
 function NewsCardList({
@@ -7,10 +9,27 @@ function NewsCardList({
   isLoggedIn = false,
   onSave,
 }) {
-  const [visibleCards, setVisibleCards] = useState(3);
+  const [visibleCards, setVisibleCards] = useState(() => {
+    const savedVisibleCards = localStorage.getItem(
+      'newsExplorerVisibleCards'
+    );
+
+    const parsedVisibleCards = Number(savedVisibleCards);
+
+    return parsedVisibleCards >= 6 ? 6 : 3;
+  });
 
   const handleShowMore = () => {
-    setVisibleCards((current) => current + 3);
+    setVisibleCards((current) => {
+      const nextVisibleCards = current + 3;
+
+      localStorage.setItem(
+        'newsExplorerVisibleCards',
+        String(nextVisibleCards)
+      );
+
+      return nextVisibleCards;
+    });
   };
 
   const displayedCards = cards.slice(0, visibleCards);
