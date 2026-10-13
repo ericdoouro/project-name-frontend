@@ -1,0 +1,33 @@
+.info-tooltip {
+  min-height: 182px;
+}
+
+.info-tooltip__title {
+  max-width: 315px;
+  margin: 0;
+  font-family: 'Roboto Slab', Georgia, serif;
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.info-tooltip__login-button {
+  margin-top: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #2f71e5;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.info-tooltip__login-button:hover {
+  opacity: 0.8;
+}
+
+.info-tooltip__login-button:focus-visible {
+  outline: 2px solid #2f71e5;
+  outline-offset: 3px;
+}
