@@ -1,6 +1,8 @@
 import { useContext, useState } from 'react';
 import CurrentUserContext from '../../contexts/CurrentUserContext';
 import './Header.css';
+import closeIcon from "../../images/close.svg";
+import logoutIcon from "../../images/logout.svg";
 
 function Header({
   isLoggedIn = false,
@@ -59,7 +61,7 @@ function Header({
           {isMenuOpen ? (
             <img
               className="header__menu-icon"
-              src="/src/images/close.svg"
+              src={closeIcon}
               alt=""
             />
           ) : (
@@ -112,7 +114,7 @@ function Header({
               <span>{userNameFromContext}</span>
                <img
                   className="header__logout-icon"
-                  src="/src/images/logout.svg"
+                  src={logoutIcon}
                   alt=""
                   aria-hidden="true"
                 />
