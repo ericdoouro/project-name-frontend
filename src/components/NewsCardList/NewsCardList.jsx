@@ -8,6 +8,7 @@ function NewsCardList({
   cards = [],
   isLoggedIn = false,
   onSave,
+  onAlreadySaved,
 }) {
   const [visibleCards, setVisibleCards] = useState(() => {
     const savedVisibleCards = localStorage.getItem(
@@ -52,6 +53,7 @@ function NewsCardList({
               isSaved={card.isSaved}
               keyword={card.keyword}
               onSave={() => onSave?.(card)}
+              onAlreadySaved={onAlreadySaved}
             />
           ))}
         </div>

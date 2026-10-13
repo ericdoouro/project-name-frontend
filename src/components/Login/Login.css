@@ -68,6 +68,11 @@
   outline-offset: 3px;
 }
 
+.auth-form__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .auth-form__switch {
   margin: 16px 0 0;
   color: #1a1b22;
@@ -92,4 +97,11 @@
 .auth-form__switch-button:focus-visible {
   outline: 2px solid #3478f6;
   outline-offset: 2px;
+}
+
+.auth-form__error {
+  margin-top: 4px;
+  color: #ff0000;
+  font-size: 12px;
+  line-height: 16px;
 }

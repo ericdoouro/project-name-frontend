@@ -1,19 +1,28 @@
 import './NewsCard.css';
 
-function NewsCard({
-  image,
-  date,
-  source,
-  title,
-  description,
-  isLoggedIn = false,
-  isSaved = false,
-  keyword,
-  onSave,
-  showDelete = false,
-  onDelete,
-}) {
+  function NewsCard({
+    image,
+    date,
+    source,
+    title,
+    description,
+    isLoggedIn = false,
+    isSaved = false,
+    keyword,
+    onSave,
+    onAlreadySaved,
+    showDelete = false,
+    onDelete,
+  }) {
   const handleSave = () => {
+    if (isSaved) {
+      if (onAlreadySaved) {
+        onAlreadySaved();
+      }
+
+      return;
+    }
+
     if (onSave) {
       onSave();
     }

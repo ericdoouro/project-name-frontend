@@ -12,16 +12,80 @@ import NotFound from './components/NotFound/NotFound';
 import SavedNews from './components/SavedNews/SavedNews';
 import Login from './components/Login/Login';
 import Register from './components/Register/Register';
-
+import InfoTooltip from './components/InfoTooltip/InfoTooltip';
 import thirdPartyApi from './utils/ThirdPartyApi';
+import mainApi from './utils/MainApi';
+import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
+import CurrentUserContext from './contexts/CurrentUserContext';
 
 import './App.css';
 
-function Home({ onLoginClick }) {
+function Home({ 
+  onLoginClick, 
+  currentUser, 
+  onLogout,
+  onAlreadySaved, 
+}) {
+
   const [cards, setCards] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState('');
+
+  
+
+  const handleSave = (article) => {
+      const token = localStorage.getItem('jwt');
+
+      if (!token) {
+        onLoginClick();
+        return;
+      }
+
+      const articleData = {
+        keyword: article.keyword,
+        title: article.title,
+        text: article.description,
+        date: article.publishedAt,
+        source: article.source?.name,
+        link: article.url,
+        image: article.urlToImage,
+      };
+
+      mainApi
+        .saveArticle(articleData, token)
+        .then(() => {
+          setCards((previousCards) =>
+            previousCards.map((card) =>
+              card.url === article.url
+                ? { ...card, isSaved: true }
+                : card
+            )
+          );
+        })
+        .catch((error) => {
+          console.error('Erro ao salvar artigo:', error);
+        });
+    };
+
+  const markSavedArticles = (articles, token) => {
+    if (!token) {
+      return Promise.resolve(articles);
+    }
+
+    return mainApi
+      .getArticles(token)
+      .then((savedArticles) => {
+        const savedLinks = new Set(
+          savedArticles.map((article) => article.link)
+        );
+
+        return articles.map((article) => ({
+          ...article,
+          isSaved: savedLinks.has(article.url),
+        }));
+      });
+  };
 
   const handleSearch = (keyword) => {
     setIsLoading(true);
@@ -38,18 +102,27 @@ function Home({ onLoginClick }) {
       .getNews(keyword)
 
       .then((data) => {
-        const articles = data.articles || [];
+        const articles = (data.articles || []).map((article) => ({
+          ...article,
+          keyword,
+        }));
 
-        setCards(articles);
+        const token = localStorage.getItem('jwt');
 
-        localStorage.setItem(
-          'newsExplorerLastSearch',
-          JSON.stringify({
-            keyword,
-            articles,
-          })
-        );
-      })  
+          return markSavedArticles(articles, token);
+        })
+        .then((articles) => {
+          setCards(articles);
+
+          localStorage.setItem(
+            'newsExplorerLastSearch',
+            JSON.stringify({
+              keyword: articles[0]?.keyword || '',
+              articles,
+            })
+          );
+        }) 
+
       .catch(() => {
         setError(
           'Desculpe, algo deu errado durante a solicitação. Pode haver um problema de conexão ou o servidor pode estar inativo. Por favor, tente novamente mais tarde.'
@@ -59,23 +132,25 @@ function Home({ onLoginClick }) {
   };
 
   useEffect(() => {
-    const savedSearch = localStorage.getItem(
-      'newsExplorerLastSearch'
-    );
+    const savedSearch = localStorage.getItem('newsExplorerLastSearch');
 
-    if (!savedSearch) {
-      return;
-    }
+    if (!savedSearch) return;
 
     try {
       const parsedSearch = JSON.parse(savedSearch);
 
       if (
-        parsedSearch &&
-        Array.isArray(parsedSearch.articles) &&
-        parsedSearch.articles.length > 0
+        parsedSearch
+        && Array.isArray(parsedSearch.articles)
+        && parsedSearch.articles.length > 0
       ) {
-        setCards(parsedSearch.articles);
+        const token = localStorage.getItem('jwt');
+
+        markSavedArticles(parsedSearch.articles, token)
+          .then((articles) => {
+            setCards(articles);
+          });
+
         setHasSearched(true);
       }
     } catch {
@@ -87,7 +162,12 @@ function Home({ onLoginClick }) {
     <div className="page">
       <main className="page__main">
         <section className="page__hero">
-          <Header onLoginClick={onLoginClick} />
+          <Header 
+            onLoginClick={onLoginClick}
+            onLogoutClick={onLogout}
+            isLoggedIn={Boolean(currentUser)}
+            userName={currentUser?.name}
+          />
 
           <Hero>
             <SearchForm onSearch={handleSearch} />
@@ -107,7 +187,12 @@ function Home({ onLoginClick }) {
         )}
 
         {!isLoading && !error && cards.length > 0 && (
-          <NewsCardList cards={cards} isLoggedIn={false} />
+          <NewsCardList 
+            cards={cards} 
+            isLoggedIn={Boolean(currentUser)}
+            onSave={handleSave}
+            onAlreadySaved={onAlreadySaved}
+          />
         )}
 
         <About />
@@ -118,10 +203,16 @@ function Home({ onLoginClick }) {
   );
 }
 
-function SavedNewsPage({ onLoginClick }) {
+function SavedNewsPage({ onLoginClick, currentUser, onLogout }) {
   return (
     <div className="page">
-      <Header isHome={false} onLoginClick={onLoginClick} />
+      <Header 
+        isHome={false} 
+        onLogoutClick={onLogout}
+        onLoginClick={onLoginClick}
+        isLoggedIn={Boolean(currentUser)}
+        userName={currentUser?.name}
+      />
       
         <SavedNews />
 
@@ -132,6 +223,53 @@ function SavedNewsPage({ onLoginClick }) {
 
 function App() {
   const [activePopup, setActivePopup] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+  const handleLoginSuccess = (token) => {
+    localStorage.setItem('jwt', token);
+
+    mainApi
+      .getUser(token)
+      .then((user) => {
+        setCurrentUser(user);
+        setActivePopup(null);
+      })
+      .catch((error) => {
+        console.error('Erro ao obter usuário:', error);
+        localStorage.removeItem('jwt');
+      });
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem('jwt');
+
+    if (!token) {
+      setIsAuthLoading(false);
+      return;
+    }
+
+    mainApi
+      .getUser(token)
+      .then((user) => {
+        setCurrentUser(user);
+      })
+      .catch(() => {
+        localStorage.removeItem('jwt');
+      })
+      .finally(() => {
+        setIsAuthLoading(false);
+      });
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('jwt');
+    setCurrentUser(null);
+  };
+
+  const handleOpenSuccess = () => {
+    setActivePopup('success');
+  };
 
   const handleOpenLogin = () => {
     setActivePopup('login');
@@ -145,29 +283,76 @@ function App() {
     setActivePopup(null);
   };
 
+  const handleOpenAlreadySaved = () => {
+    setActivePopup('already-saved');
+  };
+
   return (
     <BrowserRouter>
-      <Login
-        isOpen={activePopup === 'login'}
-        onClose={handleClosePopup}
-        onRegisterClick={handleOpenRegister}
-      />
+      <CurrentUserContext.Provider value={currentUser}>
+        <Login
+          isOpen={activePopup === 'login'}
+          onClose={handleClosePopup}
+          onRegisterClick={handleOpenRegister}
+          onLoginSuccess={handleLoginSuccess}
+        />
 
-      <Register
-        isOpen={activePopup === 'register'}
-        onClose={handleClosePopup}
-        onLoginClick={handleOpenLogin}
-      />
+        <Register
+          isOpen={activePopup === 'register'}
+          onClose={handleClosePopup}
+          onLoginClick={handleOpenLogin}
+          onRegisterSuccess={handleOpenSuccess}
+        />
 
-      <Switch>
-        <Route exact path="/saved-news">
-          <SavedNewsPage onLoginClick={handleOpenLogin} />
-        </Route>
+        <InfoTooltip
+          isOpen={
+            activePopup === 'success'
+            || activePopup === 'already-saved'
+          }
+          onClose={handleClosePopup}
+          title={
+            activePopup === 'already-saved'
+              ? 'Este artigo já foi salvo.'
+              : 'Cadastro concluído com sucesso!'
+          }
+          actionLabel={
+            activePopup === 'already-saved'
+              ? 'Entendi'
+              : 'Entrar'
+          }
+          onAction={
+            activePopup === 'success'
+              ? handleOpenLogin
+              : undefined
+          }
+        />
 
-        <Route exact path="/">
-          <Home onLoginClick={handleOpenLogin} />
-        </Route>
-      </Switch>
+        <Switch>
+          <ProtectedRoute
+            exact
+            path="/saved-news"
+            isLoggedIn={Boolean(currentUser)}
+            isAuthLoading={isAuthLoading}
+            onUnauthorized={handleOpenLogin}
+          >
+            
+            <SavedNewsPage
+              onLoginClick={handleOpenLogin}
+              currentUser={currentUser}
+              onLogout={handleLogout}
+            />
+          </ProtectedRoute>
+
+          <Route exact path="/">
+            <Home
+              onLoginClick={handleOpenLogin}
+              currentUser={currentUser}
+              onLogout={handleLogout}
+              onAlreadySaved={handleOpenAlreadySaved} 
+            />
+          </Route>
+        </Switch>
+      </CurrentUserContext.Provider>
     </BrowserRouter>
   );
 }

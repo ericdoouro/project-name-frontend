@@ -1,81 +1,74 @@
-import NewsCard from '../NewsCard/NewsCard';
+import { useContext, useEffect, useState } from 'react';
 
-import image01 from '../../images/image_01.png';
-import image04 from '../../images/image_04.png';
-import image05 from '../../images/image_05.png';
-import image07 from '../../images/image_07.png';
-import image08 from '../../images/image_08.png';
+import NewsCard from '../NewsCard/NewsCard';
+import mainApi from '../../utils/MainApi';
+import CurrentUserContext from '../../contexts/CurrentUserContext';
 
 import './SavedNews.css';
 
-const savedCards = [
-  {
-    id: 'saved-01',
-    image: image01,
-    date: '2 de setembro de 2026',
-    source: 'The Guardian',
-    title: 'Notícias e acontecimentos do mundo',
-    description:
-      'Confira as principais notícias e acontecimentos recentes.',
-    keyword: 'Natureza',
-  },
-  {
-    id: 'saved-02',
-    image: image04,
-    date: '1 de setembro de 2026',
-    source: 'The New York Times',
-    title: 'Novas descobertas e informações',
-    description:
-      'Informações e descobertas que estão em destaque.',
-    keyword: 'Natureza',
-  },
-  {
-    id: 'saved-03',
-    image: image05,
-    date: '31 de agosto de 2026',
-    source: 'The Washington Post',
-    title: 'O que está acontecendo hoje',
-    description:
-      'Os principais acontecimentos e notícias do momento.',
-    keyword: 'Natureza',
-  },
-  {
-    id: 'saved-04',
-    image: image07,
-    date: '30 de agosto de 2026',
-    source: 'BBC',
-    title: 'Informações importantes',
-    description:
-      'Confira as notícias mais relevantes dos últimos dias.',
-    keyword: 'Natureza',
-  },
-  {
-    id: 'saved-05',
-    image: image08,
-    date: '29 de agosto de 2026',
-    source: 'Reuters',
-    title: 'Notícias em destaque',
-    description:
-      'Veja os acontecimentos que estão repercutindo.',
-    keyword: 'Natureza',
-  },
-];
-
 function SavedNews() {
-  return (  
-    <main className='saved-news'>
+  const currentUser = useContext(CurrentUserContext);
+  const [savedCards, setSavedCards] = useState([]);
+
+  const keywords = [...new Set(
+    savedCards
+      .map((card) => card.keyword)
+      .filter(Boolean)
+  )];
+
+  useEffect(() => {
+    const token = localStorage.getItem('jwt');
+
+    if (!token) {
+      return;
+    }
+
+    mainApi
+      .getArticles(token)
+      .then((articles) => {
+        setSavedCards(articles);
+      })
+      .catch((error) => {
+        console.error('Erro ao carregar artigos salvos:', error);
+      });
+  }, []);
+
+  const handleDelete = (articleId) => {
+    const token = localStorage.getItem('jwt');
+
+    if (!token) {
+      return;
+    }
+
+    mainApi
+      .deleteArticle(articleId, token)
+      .then(() => {
+        setSavedCards((previousCards) =>
+          previousCards.filter((card) => card._id !== articleId)
+        );
+      })
+      .catch((error) => {
+        console.error('Erro ao excluir artigo:', error);
+      });
+  };
+
+  return (
+    <main className="saved-news">
       <section className="saved-news__header">
         <p className="saved-news__subtitle">Artigos salvos</p>
 
         <h1 className="saved-news__title">
-          Elise, você tem 5 artigos salvos
+          {currentUser?.name}, você tem {savedCards.length} artigos salvos
         </h1>
 
         <p className="saved-news__keywords">
           Por palavras-chave:{' '}
-          <span className="saved-news__keyword">
-            Natureza
-          </span>
+          {keywords.map((keyword, index) => (
+            <span className="saved-news__keyword" key={keyword}>
+              {keyword}
+              {index < keywords.length - 1 ? ', ' : ''}
+            </span>
+          ))}
         </p>
       </section>
 
@@ -83,19 +76,20 @@ function SavedNews() {
         <div className="saved-news__grid">
           {savedCards.map((card) => (
             <NewsCard
-              key={card.id}
+              key={card._id}
               image={card.image}
               date={card.date}
               source={card.source}
               title={card.title}
-              description={card.description}
+              description={card.text}
               keyword={card.keyword}
               isLoggedIn
               isSaved
               showDelete
+              onDelete={() => handleDelete(card._id)}
             />
           ))}
-        </div> 
+        </div>
       </section>
     </main>
   );

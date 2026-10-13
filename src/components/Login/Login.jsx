@@ -1,11 +1,39 @@
+import { useState } from 'react';
+
 import PopupWithForm from '../PopupWithForm/PopupWithForm';
+import mainApi from '../../utils/MainApi';
 
 import './Login.css';
 
-function Login({ isOpen, onClose, onRegisterClick }) {
+function Login({ 
+    isOpen, 
+    onClose, 
+    onRegisterClick,
+    onLoginSuccess,
+  }) {
+  const [isFormValid, setIsFormValid] = useState(false);
+
   const handleSubmit = (event) => {
     event.preventDefault();
+
+    const form = event.target;
+
+    const email = form.email.value;
+    const password = form.password.value;
+
+    mainApi
+    .signin({ email, password })
+    .then((data) => {
+      onLoginSuccess(data.token);
+    })
+    .catch((error) => {
+      console.error('Erro no login:', error);
+    });
   };
+
+    const handleInputChange = (event) => {
+      setIsFormValid(event.currentTarget.form.checkValidity());
+    };
 
   return (
     <PopupWithForm
@@ -22,6 +50,7 @@ function Login({ isOpen, onClose, onRegisterClick }) {
             name="email"
             placeholder="example@test.com"
             required
+            onChange={handleInputChange}
           />
         </label>
 
@@ -32,13 +61,16 @@ function Login({ isOpen, onClose, onRegisterClick }) {
             type="password"
             name="password"
             placeholder="••••••••"
+            minLength="3"
             required
+            onChange={handleInputChange}
           />
         </label>
 
         <button
           className="auth-form__submit"
           type="submit"
+          disabled={!isFormValid}
         >
           Entrar
         </button>

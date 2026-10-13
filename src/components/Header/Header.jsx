@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
+import CurrentUserContext from '../../contexts/CurrentUserContext';
 import './Header.css';
 
 function Header({
@@ -9,6 +10,9 @@ function Header({
   isHome = true,
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const currentUser = useContext(CurrentUserContext);
+  const isUserLoggedIn = Boolean(currentUser);
+  const userNameFromContext = currentUser?.name || 'Elise';
 
   const handleMenuToggle = () => {
     setIsMenuOpen((state) => !state);
@@ -79,7 +83,7 @@ function Header({
             Início
           </a>
         
-          {(isLoggedIn || !isHome) && (
+          {(isUserLoggedIn || !isHome) && (
             <a
               className={`header__link ${
                 !isHome ? 'header__link_active' : ''
@@ -91,7 +95,7 @@ function Header({
             </a>
           )}
 
-          {!isLoggedIn ? (
+          {!isUserLoggedIn ? (
             <button
               className="header__login-button"
               type="button"
@@ -105,7 +109,13 @@ function Header({
               type="button"
               onClick={handleLogoutClick}
             >
-              <span>{userName}</span>
+              <span>{userNameFromContext}</span>
+               <img
+                  className="header__logout-icon"
+                  src="/src/images/logout.svg"
+                  alt=""
+                  aria-hidden="true"
+                />
             </button>
           )}
         </nav>
