@@ -73,3 +73,16 @@
   line-height: 30px;
   color: #1a1b22;
 }
+
+@media screen and (max-width: 600px) {
+  .popup__close {
+    top: -40px;
+    right: 0;
+    width: 32px;
+    height: 32px;
+  }
+
+  .popup__close-icon {
+    margin: 0 auto;
+  }
+}
